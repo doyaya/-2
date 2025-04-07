@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>我剛剛看了啥👀</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Arial", sans-serif;
+      background-color: #eef7f2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #game-container {
+      position: relative;
+      width: 90vw;
+      max-width: 500px;
+      height: 90vh;
+      border: 3px solid #4CAF50;
+      background-size: cover;
+      background-position: center;
+      overflow: hidden;
+    }
+    .start-button {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 12px 24px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      z-index: 10;
+    }
+    .icon {
+      position: absolute;
+      font-size: 2rem;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .icon.correct {
+      animation: pop 0.3s ease-out;
+    }
+    .icon.wrong {
+      animation: shake 0.3s ease-in-out;
+    }
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.5); }
+      100% { transform: scale(1); }
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+    .level-indicator {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: rgba(255, 255, 255, 0.7);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-weight: bold;
+      z-index: 20;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <div id="level" class="level-indicator"></div>
+    <button class="start-button" onclick="startGame()">開始遊戲</button>
+  </div>
+
+  <audio id="success-sound" src="https://www.myinstants.com/media/sounds/correct.mp3"></audio>
+  <audio id="fail-sound" src="https://www.myinstants.com/media/sounds/wrong.mp3"></audio>
+
+  <script>
+    const gameContainer = document.getElementById('game-container');
+    const levelIndicator = document.getElementById('level');
+    const successSound = document.getElementById('success-sound');
+    const failSound = document.getElementById('fail-sound');
+
+    const scenes = [
+      'https://images.unsplash.com/photo-1509021436665-8f07dbf5bf1d',
+      'https://images.unsplash.com/photo-1596495577886-d920f1fb7238',
+      'https://images.unsplash.com/photo-1611175694986-e2d8cb1b5cf8',
+      'https://images.unsplash.com/photo-1580428182062-cb4e9f3be3a3',
+      'https://images.unsplash.com/photo-1549887534-3ec93abae2e1'
+    ];
+    const iconsPool = ['🐸', '🍄', '🌿', '🌺', '🥦', '🌾', '🦊', '🌼'];
+    let level = 1;
+    let sequence = [];
+    let currentIndex = 0;
+
+    function getPositions(count) {
+      let pos = [];
+      for (let i = 0; i < count; i++) {
+        pos.push({
+          top: Math.floor(Math.random() * 80) + '%',
+          left: Math.floor(Math.random() * 80) + '%'
+        });
+      }
+      return pos;
+    }
+
+    function startGame() {
+      level = 1;
+      document.querySelector('.start-button').style.display = 'none';
+      nextLevel();
+    }
+
+    function nextLevel() {
+      if (level > 10) {
+        alert('你是眼力大師！全部通關啦！');
+        location.reload();
+        return;
+      }
+
+      gameContainer.innerHTML = '<div id="level" class="level-indicator">第 ' + level + ' 關</div>';
+      const sceneIndex = Math.floor(Math.random() * scenes.length);
+      gameContainer.style.backgroundImage = `url('${scenes[sceneIndex]}')`;
+
+      const iconCount = level <= 3 ? 3 : level <= 5 ? 5 : 5 + (level - 5) * 2;
+      const timeToMemorize = Math.max(2000 - level * 150, 1000);
+      const positions = getPositions(iconCount);
+      sequence = [];
+      currentIndex = 0;
+
+      for (let i = 0; i < iconCount; i++) {
+        sequence.push(iconsPool[Math.floor(Math.random() * iconsPool.length)]);
+      }
+
+      alert(`記住圖案順序: ${sequence.join(' ')}`);
+
+      setTimeout(() => {
+        showIcons(sequence, positions);
+      }, timeToMemorize);
+    }
+
+    function showIcons(seq, positions) {
+      gameContainer.innerHTML = '<div id="level" class="level-indicator">第 ' + level + ' 關</div>';
+      currentIndex = 0;
+
+      seq.forEach((icon, i) => {
+        const div = document.createElement('div');
+        div.classList.add('icon');
+        div.innerText = icon;
+        div.style.top = positions[i].top;
+        div.style.left = positions[i].left;
+
+        div.addEventListener('click', () => {
+          if (icon === sequence[currentIndex]) {
+            div.classList.add('correct');
+            successSound.play();
+            currentIndex++;
+            if (currentIndex === sequence.length) {
+              setTimeout(() => {
+                level++;
+                nextLevel();
+              }, 600);
+            }
+          } else {
+            div.classList.add('wrong');
+            failSound.play();
+            setTimeout(() => {
+              alert('啥？那個是你看過的嗎？重頭來吧😭');
+              location.reload();
+            }, 500);
+          }
+        });
+
+        gameContainer.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>
